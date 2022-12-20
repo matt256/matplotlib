@@ -6,8 +6,8 @@ from matplotlib import _api, _docstring
 from matplotlib.offsetbox import AnchoredOffsetbox
 from matplotlib.patches import Patch, Rectangle
 from matplotlib.path import Path
-from matplotlib.transforms import Bbox, BboxTransformTo
-from matplotlib.transforms import IdentityTransform, TransformedBbox
+from matplotlib.transforms import (Bbox, BboxTransformTo, IdentityTransform,
+                                   TransformedBbox)
 
 from . import axes_size as Size
 from .parasite_axes import HostAxes
@@ -73,7 +73,7 @@ class AnchoredLocatorBase(AnchoredOffsetbox):
         bbox = self.get_window_extent(renderer)
         px, py = self.get_offset(bbox.width, bbox.height, 0, 0, renderer)
         bbox_canvas = Bbox.from_bounds(px, py, bbox.width, bbox.height)
-        tr = ax.figure.transFigure.inverted()
+        tr = ax.figure.transSubfigure.inverted()
         return TransformedBbox(bbox_canvas, tr)
 
 

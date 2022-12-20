@@ -1,5 +1,23 @@
-from itertools import product
 import platform
+from itertools import product
+
+import mpl_toolkits.axes_grid1.mpl_axes
+import numpy as np
+import pytest
+from mpl_toolkits.axes_grid1 import AxesGrid, Grid, ImageGrid
+from mpl_toolkits.axes_grid1 import axes_size as Size
+from mpl_toolkits.axes_grid1 import host_subplot, make_axes_locatable
+from mpl_toolkits.axes_grid1.anchored_artists import (AnchoredDirectionArrows,
+                                                      AnchoredSizeBar)
+from mpl_toolkits.axes_grid1.axes_divider import (
+    Divider, HBoxDivider, SubplotDivider, VBoxDivider,
+    make_axes_area_auto_adjustable)
+from mpl_toolkits.axes_grid1.axes_rgb import RGBAxes
+from mpl_toolkits.axes_grid1.inset_locator import (BboxConnectorPatch,
+                                                   InsetPosition, inset_axes,
+                                                   mark_inset,
+                                                   zoomed_inset_axes)
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -7,29 +25,10 @@ import matplotlib.ticker as mticker
 from matplotlib import cbook
 from matplotlib.backend_bases import MouseEvent
 from matplotlib.colors import LogNorm
+from matplotlib.testing.decorators import (check_figures_equal,
+                                           image_comparison,
+                                           remove_ticks_and_titles)
 from matplotlib.transforms import Bbox, TransformedBbox
-from matplotlib.testing.decorators import (
-    check_figures_equal, image_comparison, remove_ticks_and_titles)
-
-from mpl_toolkits.axes_grid1 import (
-    axes_size as Size,
-    host_subplot, make_axes_locatable,
-    Grid, AxesGrid, ImageGrid)
-from mpl_toolkits.axes_grid1.anchored_artists import (
-    AnchoredSizeBar, AnchoredDirectionArrows)
-from mpl_toolkits.axes_grid1.axes_divider import (
-    Divider, HBoxDivider, make_axes_area_auto_adjustable, SubplotDivider,
-    VBoxDivider)
-from mpl_toolkits.axes_grid1.axes_rgb import RGBAxes
-from mpl_toolkits.axes_grid1.inset_locator import (
-    zoomed_inset_axes, mark_inset, inset_axes, BboxConnectorPatch,
-    InsetPosition)
-import mpl_toolkits.axes_grid1.mpl_axes
-
-import pytest
-
-import numpy as np
-from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 
 def test_divider_append_axes():
@@ -699,11 +698,45 @@ def test_imagegrid():
 
 
 def test_removal():
-    import matplotlib.pyplot as plt
     import mpl_toolkits.axisartist as AA
+
+    import matplotlib.pyplot as plt
     fig = plt.figure()
     ax = host_subplot(111, axes_class=AA.Axes, figure=fig)
     col = ax.fill_between(range(5), 0, range(5))
     fig.canvas.draw()
     col.remove()
     fig.canvas.draw()
+
+
+@image_comparison(['anchored_locator_base_call.png'], style="mpl20")
+def test_anchored_locator_base_call():
+    fig = plt.figure(figsize=(3, 3))
+    fig1, fig2 = fig.subfigures(
+        nrows=2, ncols=1, height_ratios=[1, 1], squeeze=True
+    )
+
+    ax = fig1.subplots()
+    ax.set(aspect=1, xlim=(-15, 15), ylim=(-20, 5))
+
+    Z = cbook.get_sample_data(
+        "axes_grid/bivariate_normal.npy", np_load=True
+    )
+    extent = (-3, 4, -4, 3)
+
+    axins = zoomed_inset_axes(ax, zoom=2, loc="upper left")
+    axins.set(xticks=[], yticks=[])
+    im = axins.imshow(Z, extent=extent, origin="lower")
+
+    # colorbar
+    cax = inset_axes(
+        axins,
+        width="5%",  # width = 10% of parent_bbox width
+        height="100%",  # height : 50%
+        loc="lower left",
+        bbox_to_anchor=(1.05, 0.0, 1, 1),
+        bbox_transform=axins.transAxes,
+        borderpad=0,
+    )
+
+    fig.colorbar(im, cax=cax)
